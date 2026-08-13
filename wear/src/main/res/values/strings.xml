@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">金属狗淋浴</string>
+    <string name="tile_label">淋浴控制</string>
+    <string name="tile_description">打开应用并确认后控制淋浴</string>
+</resources>

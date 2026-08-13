@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.MetalDogShower.Starting" parent="Theme.MetalDogShower">
+        <item name="android:windowSplashScreenBackground">#111638</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_mark_empty</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">#111638</item>
+        <item name="android:windowSplashScreenAnimationDuration">0</item>
+    </style>
+</resources>

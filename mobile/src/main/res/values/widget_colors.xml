@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_surface">#F5F7FA</color>
+    <color name="widget_on_surface">#111638</color>
+    <color name="widget_muted">#575A72</color>
+    <color name="widget_tab_surface">#E7EBF2</color>
+    <color name="widget_tab_border">#D3D9E3</color>
+    <color name="widget_tab_selected">#111638</color>
+    <color name="widget_on_tab_selected">#F7F1E3</color>
+    <color name="widget_status_surface">#E7EBF2</color>
+    <color name="widget_refresh_surface">#DDE3ED</color>
+    <color name="widget_on_refresh_surface">#111638</color>
+    <color name="widget_open_surface">#E85B25</color>
+    <color name="widget_open_border">#8E2A0C</color>
+    <color name="widget_on_open_surface">#FFFFFF</color>
+    <color name="widget_open_text">#9B3818</color>
+    <color name="widget_close_surface">#111638</color>
+    <color name="widget_close_border">#E96B3A</color>
+    <color name="widget_on_close_surface">#FFFFFF</color>
+    <color name="widget_closed_text">#33385D</color>
+    <color name="widget_pending_text">#2F80ED</color>
+    <color name="widget_status_open">#E96B3A</color>
+    <color name="widget_status_closed">#111638</color>
+</resources>

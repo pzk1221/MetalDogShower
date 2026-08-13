@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_name">金属狗浴室控制</string>
+    <string name="widget_description">选择浴室后直接刷新、开启或关闭</string>
+    <string name="widget_title">金属狗淋浴</string>
+    <string name="widget_title_short">金属狗</string>
+    <string name="widget_setup_needed">未登录</string>
+    <string name="widget_room_one">浴室 1</string>
+    <string name="widget_room_two">浴室 2</string>
+    <string name="widget_room_one_short">浴室1</string>
+    <string name="widget_room_two_short">浴室2</string>
+    <string name="widget_select_room_one">选择浴室 1</string>
+    <string name="widget_select_room_two">选择浴室 2</string>
+    <string name="widget_state_open">已开启</string>
+    <string name="widget_state_closed">已关闭</string>
+    <string name="widget_state_needs_check">待核对</string>
+    <string name="widget_room_unconfigured">未配置</string>
+    <string name="widget_open">开启</string>
+    <string name="widget_close">关闭</string>
+    <string name="widget_open_short">开启</string>
+    <string name="widget_close_short">关闭</string>
+    <string name="widget_refresh">刷新</string>
+    <string name="widget_refresh_description">刷新当前选择浴室的状态</string>
+    <string name="widget_open_description">直接开启当前选择的浴室</string>
+    <string name="widget_close_description">直接关闭当前选择的浴室</string>
+    <string name="widget_open_app_description">打开金属狗淋浴应用</string>
+</resources>

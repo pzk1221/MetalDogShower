@@ -1,0 +1,12 @@
+<resources>
+    <style name="Theme.MetalDogShower" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowBackground">#F7FAFF</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">#F7FAFF</item>
+        <item name="android:navigationBarColor">#F8F6F1</item>
+    </style>
+
+    <!-- Activity launch theme. Android 12+ adds the native splash attributes in values-v31. -->
+    <style name="Theme.MetalDogShower.Starting" parent="Theme.MetalDogShower" />
+</resources>
