@@ -11,11 +11,30 @@ import com.panzhikun.metaldogshower.widget.ShowerWidgetSnapshot
 import com.panzhikun.metaldogshower.widget.ShowerWidgetStateStore
 import com.panzhikun.metaldogshower.widget.WidgetRoom
 import com.panzhikun.metaldogshower.widget.WidgetRoomSnapshot
+import com.panzhikun.metaldogshower.core.ShowerStatus
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 
 class MetalDogApplication : Application() {
     /** Serializes protected phone requests with credential/route mutation and widget control. */
     val phoneOperationMutex = Mutex()
+
+    val historyStore: ShowerHistoryStore by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        ShowerHistoryStore(this)
+    }
+
+    private val historyBackupClient: ShowerHistoryBackupClient by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        ShowerHistoryBackupClient(this)
+    }
+
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var backupJob: Job? = null
 
     val sessionStore: SecureSessionStore by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
         SecureSessionStore(this)
@@ -43,6 +62,30 @@ class MetalDogApplication : Application() {
         ShowerWidgetBridge.install(phoneWidgetController)
         publishWidgetSession(preserveVerifiedStatus = true)
         BackgroundPollingScheduler.reconcile(this)
+        // A launch always attempts a full backup. Changes made while the app was already open are
+        // also queued so a completed session reaches the server without waiting for another launch.
+        applicationScope.launch {
+            historyStore.state.collectLatest {
+                delay(500L)
+                backupHistoryNow()
+            }
+        }
+        backupHistoryNow()
+    }
+
+    fun recordConfirmedStatus(slot: Int, status: ShowerStatus, observedAtEpochMillis: Long = System.currentTimeMillis()) {
+        val room = sessionStore.snapshotOrNull()?.room(slot) ?: return
+        if (historyStore.observeConfirmedStatus(slot, room.name, status.isOpen, observedAtEpochMillis)) {
+            backupHistoryNow()
+        }
+    }
+
+    private fun backupHistoryNow() {
+        backupJob?.cancel()
+        val snapshot = historyStore.snapshot()
+        backupJob = applicationScope.launch {
+            historyBackupClient.backup(snapshot)
+        }
     }
 
     /** Used only by the scheduled JobService; the implementation performs status GETs, never POSTs. */

@@ -6,6 +6,7 @@ import android.app.job.JobScheduler
 import android.app.job.JobService
 import android.content.ComponentName
 import android.content.Context
+import android.os.Build
 import android.os.PersistableBundle
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -165,20 +166,45 @@ class WidgetActionJobService : JobService() {
             val appContext = context.applicationContext
             val scheduler = appContext.getSystemService(JobScheduler::class.java) ?: return false
             val pending = ShowerWidgetStateStore.pendingAction(appContext) ?: return false
+            val scheduled = runCatching {
+                scheduler.schedule(buildJobInfo(appContext, room, kind, pending))
+            }.getOrDefault(JobScheduler.RESULT_FAILURE)
+            return scheduled == JobScheduler.RESULT_SUCCESS
+        }
+
+        internal fun buildJobInfo(
+            context: Context,
+            room: WidgetRoom,
+            kind: WidgetActionKind,
+            pending: WidgetPendingAction,
+        ): JobInfo {
+            val appContext = context.applicationContext
             val extras = PersistableBundle().apply {
                 putInt(EXTRA_ROOM, room.storageId)
                 putString(EXTRA_KIND, kind.name)
                 putLong(EXTRA_STARTED_AT, pending.startedAtEpochMillis)
             }
-            val job = JobInfo.Builder(
+            val jobBuilder = JobInfo.Builder(
                 JOB_ID,
                 ComponentName(appContext, WidgetActionJobService::class.java),
             )
-                .setMinimumLatency(0L)
-                .setOverrideDeadline(10_000L)
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                 .setExtras(extras)
-                .build()
-            return scheduler.schedule(job) == JobScheduler.RESULT_SUCCESS
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                // A widget button is an explicit, time-sensitive user action. A regular job can
+                // remain queued while Samsung puts the app in standby and then run only when the
+                // Activity is opened. Expedited execution bypasses that batching without opening
+                // an Activity or keeping a foreground service/notification alive.
+                jobBuilder.setExpedited(true)
+            } else {
+                // Expedited jobs were added in Android 12. On older devices an immediate override
+                // deadline is the closest equivalent and avoids the previous ten-second window.
+                jobBuilder
+                    .setMinimumLatency(0L)
+                    .setOverrideDeadline(0L)
+            }
+            return jobBuilder.build()
         }
     }
 }

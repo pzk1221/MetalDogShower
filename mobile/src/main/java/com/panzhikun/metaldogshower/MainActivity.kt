@@ -102,6 +102,10 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.core.view.WindowCompat
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlin.math.PI
@@ -207,6 +211,10 @@ private fun MetalDogScreen(
         control
     }
     val context = LocalContext.current
+    val historyStore = remember(context.applicationContext) {
+        (context.applicationContext as MetalDogApplication).historyStore
+    }
+    val history by historyStore.state.collectAsStateWithLifecycle()
     val view = LocalView.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val darkTheme = isSystemInDarkTheme()
@@ -376,6 +384,9 @@ private fun MetalDogScreen(
                             onControl = if (marketingCapture) ({ _ -> }) else controlViewModel::controlSelected,
                         )
                     }
+                }
+                item(key = "home_history") {
+                    PageSection { ShowerHistoryCard(history) }
                 }
             } else {
                 item(key = "login_intro") { PageSection { IntroCard() } }
@@ -830,6 +841,165 @@ private fun PhoneControlCard(
                 TextButton(onClick = { pendingDesired = null }) { Text("取消") }
             },
         )
+    }
+}
+
+@Composable
+private fun ShowerHistoryCard(history: ShowerHistorySnapshot) {
+    var monthOffset by rememberSaveable { mutableStateOf(0) }
+    val month = remember(monthOffset) {
+        Calendar.getInstance().apply {
+            add(Calendar.MONTH, monthOffset)
+            set(Calendar.DAY_OF_MONTH, 1)
+            set(Calendar.HOUR_OF_DAY, 12)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+    }
+    val monthTitle = remember(month.timeInMillis) {
+        SimpleDateFormat("yyyy年M月", Locale.CHINA).format(month.time)
+    }
+    val daysInMonth = month.getActualMaximum(Calendar.DAY_OF_MONTH)
+    val firstColumn = (month.get(Calendar.DAY_OF_WEEK) - Calendar.MONDAY + 7) % 7
+    val washedDays = remember(history.records, month.timeInMillis) {
+        history.records.mapNotNull { record ->
+            Calendar.getInstance().apply { timeInMillis = record.startedAtEpochMillis }
+                .takeIf {
+                    it.get(Calendar.YEAR) == month.get(Calendar.YEAR) &&
+                        it.get(Calendar.MONTH) == month.get(Calendar.MONTH)
+                }
+                ?.get(Calendar.DAY_OF_MONTH)
+        }.toSet()
+    }
+    val today = Calendar.getInstance()
+    val isCurrentMonth = today.get(Calendar.YEAR) == month.get(Calendar.YEAR) &&
+        today.get(Calendar.MONTH) == month.get(Calendar.MONTH)
+    val dateFormatter = remember { SimpleDateFormat("MM月dd日 HH:mm", Locale.CHINA) }
+    val timeFormatter = remember { SimpleDateFormat("HH:mm", Locale.CHINA) }
+
+    Card(shape = RoundedCornerShape(22.dp)) {
+        Column(Modifier.fillMaxWidth().padding(18.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("沐浴记录", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(
+                        "完整沐浴至少记录 1 分钟；启动时自动备份",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                TextButton(
+                    onClick = { monthOffset = (monthOffset - 1).coerceAtLeast(-24) },
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                ) { Text("‹") }
+                Text(monthTitle, fontWeight = FontWeight.SemiBold)
+                TextButton(
+                    onClick = { monthOffset = (monthOffset + 1).coerceAtMost(24) },
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                ) { Text("›") }
+            }
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                listOf("一", "二", "三", "四", "五", "六", "日").forEach { label ->
+                    Text(
+                        label,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            repeat(6) { rowIndex ->
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    repeat(7) { columnIndex ->
+                        val day = rowIndex * 7 + columnIndex - firstColumn + 1
+                        if (day !in 1..daysInMonth) {
+                            Spacer(Modifier.weight(1f).height(38.dp))
+                        } else {
+                            val washed = day in washedDays
+                            val past = !isCurrentMonth || day < today.get(Calendar.DAY_OF_MONTH)
+                            val isToday = isCurrentMonth && day == today.get(Calendar.DAY_OF_MONTH)
+                            Surface(
+                                modifier = Modifier.weight(1f).height(38.dp),
+                                color = if (washed) MaterialTheme.colorScheme.primaryContainer else
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                shape = RoundedCornerShape(10.dp),
+                                border = if (isToday) androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.primary,
+                                ) else null,
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center,
+                                ) {
+                                    Text(
+                                        day.toString(),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                                    )
+                                    Text(
+                                        when {
+                                            washed -> "✓"
+                                            past -> "·"
+                                            else -> ""
+                                        },
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = if (washed) MaterialTheme.colorScheme.primary else
+                                            MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "✓ 已记录    · 过去未记录    今天用边框标出",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(14.dp))
+            if (history.activeSessions.isNotEmpty()) {
+                history.activeSessions.forEach { active ->
+                    Text(
+                        "正在沐浴 · ${active.roomName} · ${timeFormatter.format(Date(active.startedAtEpochMillis))} 开始",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+            if (history.records.isEmpty()) {
+                Text(
+                    "还没有完整记录。开启后确认关闭，时间会自动保存到日历。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Text("最近记录", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(6.dp))
+                history.records.take(4).forEach { record ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(record.roomName, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
+                        Text(
+                            "${dateFormatter.format(Date(record.startedAtEpochMillis))}–${timeFormatter.format(Date(record.endedAtEpochMillis))}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

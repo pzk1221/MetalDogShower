@@ -13,8 +13,8 @@ android {
         // API 37 ignores fixed orientation on large displays. This personal app intentionally
         // targets 36 so its requested portrait-only workflow also applies when a foldable is open.
         targetSdk = 36
-        versionCode = 9
-        versionName = "0.7.1"
+        versionCode = 11
+        versionName = "0.8.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

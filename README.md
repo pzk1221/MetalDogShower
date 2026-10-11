@@ -1,6 +1,6 @@
 # 金属狗洗浴（MetalDogShower）
 
-面向 Android 手机与 Wear OS 手表的第三方淋浴控制客户端。当前版本为 **v0.7.1（versionCode 9）**，支持两间浴室、手机与手表共享登录状态、桌面小组件、状态轮询和定时刷新。
+面向 Android 手机与 Wear OS 手表的第三方淋浴控制客户端。当前手机版本为 **v0.8.0（versionCode 11）**，支持两间浴室、手机与手表共享登录状态、桌面小组件、状态轮询、定时刷新和沐浴记录日历。
 
 > 本项目不是金属狗或相关服务商的官方产品，也未获得其认可或授权。仅供用户控制本人账号下、本人有权使用的浴室设备。请勿用于他人账号、他人设备、批量控制、扫描、压测或绕过任何身份验证与访问控制。
 
@@ -20,6 +20,9 @@
 - 提供多尺寸桌面小组件，可切换浴室、刷新状态并快速控制。
 - 自动适配浅色与深色模式，手机端带新手指引、启动动画和底部 Dock。
 - 支持前台轮询，以及每天或仅一次的后台定时刷新窗口。
+- 自动记录已确认的沐浴开始与结束时间，少于 1 分钟的短暂开关不写入记录。
+- 首页下方提供按月日历，标记已记录和过去未记录的日期，并保留最近记录。
+- 应用启动时异步备份记录到个人服务器；备份使用 Android Keystore 生成的安装专属 RSA 签名，不在 APK 中保存 SSH 私钥。
 
 ## 界面设计
 
@@ -95,6 +98,7 @@ wear/build/outputs/apk/real/optimized/wear-real-optimized.apk
 - [网络限制策略](NETWORK_LIMIT_POLICY.md)
 - [研究依据](RESEARCH_EVIDENCE.md)
 - [安全设计](SECURITY.md)
+- [沐浴记录备份服务](server/metaldog-backup/README.md)
 - [签名说明](SIGNING.md)
 - [测试报告](TEST_REPORT.md)
 - [技术限制](TECHNICAL_LIMITATION.md)

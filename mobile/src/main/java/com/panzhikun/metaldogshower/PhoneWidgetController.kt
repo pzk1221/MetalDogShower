@@ -44,6 +44,7 @@ class PhoneWidgetController(private val app: MetalDogApplication) : ShowerWidget
                     return WidgetCommandResult.Failed(FailureReason.REJECTED)
                 }
                 val beforeState = before.toWidgetState()
+                app.recordConfirmedStatus(command.room.slot, before)
                 ShowerWidgetStateStore.publishRoomStatus(
                     context,
                     command.room,
@@ -62,13 +63,19 @@ class PhoneWidgetController(private val app: MetalDogApplication) : ShowerWidget
                     0L,
                 )
                 when (val result = app.repository.control(room.route, command.desiredState == WidgetShowerState.OPEN)) {
-                    is ControlResult.Confirmed -> WidgetCommandResult.Applied(result.status.toWidgetState())
+                    is ControlResult.Confirmed -> {
+                        app.recordConfirmedStatus(command.room.slot, result.status)
+                        WidgetCommandResult.Applied(result.status.toWidgetState())
+                    }
                     is ControlResult.Ambiguous -> {
                         if (result.authenticationRequired) {
                             clearMatchingSession(session)
                             WidgetCommandResult.Ambiguous(authenticationRequired = true)
                         } else {
-                            result.observedStatus?.let { WidgetCommandResult.Applied(it.toWidgetState()) }
+                            result.observedStatus?.let {
+                                app.recordConfirmedStatus(command.room.slot, it)
+                                WidgetCommandResult.Applied(it.toWidgetState())
+                            }
                                 ?: WidgetCommandResult.Ambiguous()
                         }
                     }
@@ -113,6 +120,7 @@ class PhoneWidgetController(private val app: MetalDogApplication) : ShowerWidget
                 if (!isCurrent(session, configured.slot)) {
                     WidgetRefreshResult.Failed(FailureReason.REJECTED)
                 } else {
+                    app.recordConfirmedStatus(room.slot, status)
                     WidgetRefreshResult.Updated(status.toWidgetState())
                 }
             } catch (cancelled: CancellationException) {

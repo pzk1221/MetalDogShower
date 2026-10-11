@@ -401,6 +401,7 @@ class PhoneControlViewModel(application: Application) : AndroidViewModel(applica
     }
 
     private fun publishWidgetStatus(slot: Int, status: ShowerStatus, confirmedAt: Long) {
+        app.recordConfirmedStatus(slot, status, confirmedAt)
         ShowerWidgetStateStore.publishRoomStatus(
             getApplication(),
             if (slot == 1) WidgetRoom.ROOM_ONE else WidgetRoom.ROOM_TWO,
